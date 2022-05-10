@@ -57,27 +57,21 @@ contract CurrencyManager is ICurrencyManager, Ownable {
 
     /**
      * @notice See whitelisted currencies in the system
-     * @param cursor cursor (should start at 0 for first request)
-     * @param size size of the response (e.g., 50)
      */
-    function viewWhitelistedCurrencies(uint256 cursor, uint256 size)
+    function viewWhitelistedCurrencies()
         external
         view
         override
         returns (address[] memory, uint256)
     {
-        uint256 length = size;
-
-        if (length > _whitelistedCurrencies.length() - cursor) {
-            length = _whitelistedCurrencies.length() - cursor;
-        }
+        uint256 length = _whitelistedCurrencies.length();
 
         address[] memory whitelistedCurrencies = new address[](length);
 
         for (uint256 i = 0; i < length; i++) {
-            whitelistedCurrencies[i] = _whitelistedCurrencies.at(cursor + i);
+            whitelistedCurrencies[i] = _whitelistedCurrencies.at(i);
         }
 
-        return (whitelistedCurrencies, cursor + length);
+        return (whitelistedCurrencies, length);
     }
 }
