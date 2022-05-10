@@ -57,27 +57,21 @@ contract ExecutionManager is IExecutionManager, Ownable {
 
     /**
      * @notice See whitelisted strategies in the system
-     * @param cursor cursor (should start at 0 for first request)
-     * @param size size of the response (e.g., 50)
      */
-    function viewWhitelistedStrategies(uint256 cursor, uint256 size)
+    function viewWhitelistedStrategies()
         external
         view
         override
         returns (address[] memory, uint256)
     {
-        uint256 length = size;
-
-        if (length > _whitelistedStrategies.length() - cursor) {
-            length = _whitelistedStrategies.length() - cursor;
-        }
+        uint256 length = _whitelistedStrategies.length();
 
         address[] memory whitelistedStrategies = new address[](length);
 
         for (uint256 i = 0; i < length; i++) {
-            whitelistedStrategies[i] = _whitelistedStrategies.at(cursor + i);
+            whitelistedStrategies[i] = _whitelistedStrategies.at(i);
         }
 
-        return (whitelistedStrategies, cursor + length);
+        return (whitelistedStrategies, length);
     }
 }
