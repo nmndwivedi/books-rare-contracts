@@ -397,7 +397,7 @@ describe("Strategy Standard Sale For Fixed Price", function () {
 
     await network.provider.send("hardhat_setBalance", [
       owner.address,
-      numToHex(3424418825043170000),
+      numToHex(34244188250),
     ]);
 
     //   const bal = await hre.network.provider.send("eth_getBalance",
