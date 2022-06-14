@@ -5,6 +5,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IRoyaltyFeeRegistry} from "../interfaces/IRoyaltyFeeRegistry.sol";
 
+error Owner_RoyaltyFeeLimitTooHigh(uint256 royaltyFeeLimit);
+error Registry_RoyaltyFeeTooHigh(uint256 royaltyFee, uint256 royaltyFeeLimit);
+
 /**
  * @title RoyaltyFeeRegistry
  * @notice It is a royalty fee registry for the BooksRare exchange.
@@ -29,7 +32,8 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
      */
     constructor(uint256 _royaltyFeeLimit) {
-        require(_royaltyFeeLimit <= 9500, "Owner: Royalty fee limit too high");
+        if(_royaltyFeeLimit > 9500) revert Owner_RoyaltyFeeLimitTooHigh(_royaltyFeeLimit);
+
         royaltyFeeLimit = _royaltyFeeLimit;
     }
 
@@ -38,7 +42,8 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
      */
     function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit) external override onlyOwner {
-        require(_royaltyFeeLimit <= 9500, "Owner: Royalty fee limit too high");
+        if(_royaltyFeeLimit > 9500) revert Owner_RoyaltyFeeLimitTooHigh(_royaltyFeeLimit);
+
         royaltyFeeLimit = _royaltyFeeLimit;
 
         emit NewRoyaltyFeeLimit(_royaltyFeeLimit);
@@ -57,7 +62,8 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
         address receiver,
         uint256 fee
     ) external override onlyOwner {
-        require(fee <= royaltyFeeLimit, "Registry: Royalty fee too high");
+        if(fee > royaltyFeeLimit) revert Registry_RoyaltyFeeTooHigh(fee, royaltyFeeLimit);
+
         _royaltyFeeInfoCollection[collection] = FeeInfo({setter: setter, receiver: receiver, fee: fee});
 
         emit RoyaltyFeeUpdate(collection, setter, receiver, fee);

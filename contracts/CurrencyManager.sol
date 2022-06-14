@@ -6,6 +6,9 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 
+error Currency_AlreadyWhitelisted(address currency);
+error Currency_NotWhitelisted(address currency);
+
 /**
  * @title CurrencyManager
  * @notice It allows adding/removing currencies for trading on the BooksRare exchange.
@@ -23,7 +26,8 @@ contract CurrencyManager is ICurrencyManager, Ownable {
      * @param currency address of the currency to add
      */
     function addCurrency(address currency) external override onlyOwner {
-        require(!_whitelistedCurrencies.contains(currency), "Currency: Already whitelisted");
+        if(_whitelistedCurrencies.contains(currency)) revert Currency_AlreadyWhitelisted(currency);
+
         _whitelistedCurrencies.add(currency);
 
         emit CurrencyWhitelisted(currency);
@@ -34,7 +38,8 @@ contract CurrencyManager is ICurrencyManager, Ownable {
      * @param currency address of the currency to remove
      */
     function removeCurrency(address currency) external override onlyOwner {
-        require(_whitelistedCurrencies.contains(currency), "Currency: Not whitelisted");
+        if(!_whitelistedCurrencies.contains(currency)) revert Currency_NotWhitelisted(currency);
+
         _whitelistedCurrencies.remove(currency);
 
         emit CurrencyRemoved(currency);
