@@ -6,6 +6,9 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
 
+error Strategy_AlreadyWhitelisted(address strategy);
+error Strategy_NotWhitelisted(address strategy);
+
 /**
  * @title ExecutionManager
  * @notice It allows adding/removing execution strategies for trading on the BooksRare exchange.
@@ -23,7 +26,8 @@ contract ExecutionManager is IExecutionManager, Ownable {
      * @param strategy address of the strategy to add
      */
     function addStrategy(address strategy) external override onlyOwner {
-        require(!_whitelistedStrategies.contains(strategy), "Strategy: Already whitelisted");
+        if(_whitelistedStrategies.contains(strategy)) revert Strategy_AlreadyWhitelisted(strategy);
+
         _whitelistedStrategies.add(strategy);
 
         emit StrategyWhitelisted(strategy);
@@ -34,7 +38,8 @@ contract ExecutionManager is IExecutionManager, Ownable {
      * @param strategy address of the strategy to remove
      */
     function removeStrategy(address strategy) external override onlyOwner {
-        require(_whitelistedStrategies.contains(strategy), "Strategy: Not whitelisted");
+        if(!_whitelistedStrategies.contains(strategy)) revert Strategy_NotWhitelisted(strategy);
+
         _whitelistedStrategies.remove(strategy);
 
         emit StrategyRemoved(strategy);

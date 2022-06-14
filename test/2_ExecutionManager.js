@@ -33,6 +33,10 @@ describe("Execution Manager", function () {
     });
 
     expect(await executionManager.viewCountWhitelistedStrategies()).to.be.equal(strategies.length).to.be.equal(wlStrategies.length).to.be.equal(wlStrategiesCount);
+
+    const tx = executionManager.addStrategy(strategies[0]);
+
+    await expect(tx).to.be.revertedWith('Strategy_AlreadyWhitelisted("0x2625760C4A8e8101801D3a48eE64B2bEA42f1E96")');
   })
 
   it("SBA2 remove a strategy from whitelist", async function () {
