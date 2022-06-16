@@ -8,7 +8,7 @@ const { address: azukiAddress, abi: azukiAbi } = require("./constants/azuki");
 
 describe("Royalty Fee Manager", function () {
   // Deploy contract
-  let royaltyFeeManager, royaltyFeeRegistry, royaltyFeeSetter, owner, account1;
+  let royaltyFeeManager, royaltyFeeRegistry, royaltyFeeSetter, looksRareExchange, owner, account1;
 
   before(async () => {
     [owner, account1, account2] = await ethers.getSigners();
@@ -33,9 +33,11 @@ describe("Royalty Fee Manager", function () {
     const RoyaltyFeeManager = await ethers.getContractFactory("RoyaltyFeeManager");
     royaltyFeeManager = await RoyaltyFeeManager.deploy(royaltyFeeRegistry.address);
     await royaltyFeeManager.deployed();
+
+    console.log(ethers.utils.id("1"));
   });
 
-  it("Should pass: royalty fee should be calculated as per %age set by owner", async () => {
+  it("Should pass: collection setter must be of type 2(azuki inherits ownable)", async () => {
     const azukiOwner = "0x2aE6B0630EBb4D155C6e04fCB16840FFA77760AA";
 
     await hre.network.provider.request({
