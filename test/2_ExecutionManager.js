@@ -36,7 +36,7 @@ describe("Execution Manager", function () {
 
     const tx = executionManager.addStrategy(strategies[0]);
 
-    await expect(tx).to.be.revertedWith('Strategy_AlreadyWhitelisted("0x2625760C4A8e8101801D3a48eE64B2bEA42f1E96")');
+    await expect(tx).to.be.revertedWith('Strategy_AlreadyWhitelisted');
   })
 
   it("SBA2 remove a strategy from whitelist", async function () {
