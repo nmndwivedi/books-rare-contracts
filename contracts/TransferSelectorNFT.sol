@@ -6,6 +6,10 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
 
+error Owner_CollectionCannotBeNullAddress();
+error Owner_TransferManagerCannotBeNullAddress();
+error Owner_CollectionHasNoTransferManager(address collection);
+
 /**
  * @title TransferSelectorNFT
  * @notice It selects the NFT transfer manager based on a collection address.
@@ -44,8 +48,8 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
      * @dev It is meant to be used for exceptions only (e.g., CryptoKitties)
      */
     function addCollectionTransferManager(address collection, address transferManager) external onlyOwner {
-        require(collection != address(0), "Owner: Collection cannot be null address");
-        require(transferManager != address(0), "Owner: TransferManager cannot be null address");
+        if(collection == address(0)) revert Owner_CollectionCannotBeNullAddress(); // "Owner: Collection cannot be null address");
+        if(transferManager == address(0)) revert Owner_TransferManagerCannotBeNullAddress(); // "Owner: TransferManager cannot be null address");
 
         transferManagerSelectorForCollection[collection] = transferManager;
 
@@ -57,10 +61,7 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
      * @param collection collection address to remove exception
      */
     function removeCollectionTransferManager(address collection) external onlyOwner {
-        require(
-            transferManagerSelectorForCollection[collection] != address(0),
-            "Owner: Collection has no transfer manager"
-        );
+        if(transferManagerSelectorForCollection[collection] == address(0)) revert Owner_CollectionHasNoTransferManager(collection); // "Owner: Collection has no transfer manager");
 
         // Set it to the address(0)
         transferManagerSelectorForCollection[collection] = address(0);
