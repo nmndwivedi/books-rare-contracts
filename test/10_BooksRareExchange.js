@@ -8,7 +8,9 @@ const { address: azukiAddress, abi: azukiAbi } = require("./constants/azuki");
 
 describe("Royalty Fee Manager", function () {
   // Deploy contract
-  let royaltyFeeManager, royaltyFeeRegistry, royaltyFeeSetter, looksRareExchange, owner, account1;
+  let currencyManager, executionManager, royaltyFeeManager, royaltyFeeRegistry, royaltyFeeSetter, booksRareExchange, owner, account1;
+
+  let weth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
   before(async () => {
     [owner, account1, account2] = await ethers.getSigners();
@@ -18,10 +20,18 @@ describe("Royalty Fee Manager", function () {
       numToHex(45281102540907114720),
     ]);
 
+    const ExecutionManager = await ethers.getContractFactory("ExecutionManager");
+    executionManager = await ExecutionManager.deploy();
+    await executionManager.deployed();
+
+    const CurrencyManager = await ethers.getContractFactory("CurrencyManager");
+    currencyManager = await CurrencyManager.deploy();
+    await currencyManager.deployed();
+
+
     const RoyaltyFeeRegistry = await ethers.getContractFactory("RoyaltyFeeRegistry");
     royaltyFeeRegistry =  await RoyaltyFeeRegistry.deploy(ethers.utils.parseUnits("2000", 0));
     await royaltyFeeRegistry.deployed();
-
 
     const RoyaltyFeeSetter = await ethers.getContractFactory("RoyaltyFeeSetter");
     royaltyFeeSetter = await RoyaltyFeeSetter.deploy(royaltyFeeRegistry.address);
@@ -29,12 +39,14 @@ describe("Royalty Fee Manager", function () {
 
     await royaltyFeeRegistry.transferOwnership(royaltyFeeSetter.address);
 
-
     const RoyaltyFeeManager = await ethers.getContractFactory("RoyaltyFeeManager");
     royaltyFeeManager = await RoyaltyFeeManager.deploy(royaltyFeeRegistry.address);
     await royaltyFeeManager.deployed();
 
-    console.log(ethers.utils.id("1"));
+
+    const BooksRareExchange = await ethers.getContractFactory("BooksRareExchange");
+    booksRareExchange = await BooksRareExchange.deploy(currencyManager.address, executionManager.address, royaltyFeeManager.address, weth, owner.address);
+    await booksRareExchange.deployed();
   });
 
   it("Should pass: collection setter must be of type 2(azuki inherits ownable)", async () => {

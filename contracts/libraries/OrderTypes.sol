@@ -34,7 +34,7 @@ library OrderTypes {
         uint256 price; // final price for the purchase
         uint256 tokenId;
         uint256 minPercentageToAsk; // // slippage protection (9000 --> 90% of the final price must return to ask)
-        bytes params; // other params (e.g., tokenId)
+        bytes params; // other params (e.g., privately approved buyer)
     }
 
     function hash(MakerOrder memory makerOrder) internal pure returns (bytes32) {
