@@ -4,7 +4,7 @@ const { ethers, network } = require("hardhat");
 
 const { moveBlocks, moveTime } = require("./utils/move");
 const { numToHex, hexToNum } = require("./utils/hex");
-const { address: azukiAddress, abi: azukiAbi } = require("./constants/azuki");
+const { address: boredApeAddress, abi: boredApeAbi } = require("./constants/boredApe");
 
 describe("Royalty Fee Manager", function () {
   // Deploy contract
@@ -18,7 +18,7 @@ describe("Royalty Fee Manager", function () {
       numToHex(45281102540907114720),
     ]);
 
-    transferManagerERC721 =  await (await ethers.getContractFactory("TransferManagerErc721")).deploy();
+    transferManagerERC721 =  await (await ethers.getContractFactory("TransferManagerERC721")).deploy();
     await transferManagerERC721.deployed();
 
     transferManagerERC1155 =  await (await ethers.getContractFactory("TransferManagerERC1155")).deploy();
@@ -31,29 +31,13 @@ describe("Royalty Fee Manager", function () {
     await transferSelectorNFT.deployed();
   });
 
-  it("Should pass: collection setter must be of type 2(azuki inherits ownable)", async () => {
-    // const azukiOwner = "0x2aE6B0630EBb4D155C6e04fCB16840FFA77760AA";
-
-    // await hre.network.provider.request({
-    //   method: "hardhat_impersonateAccount",
-    //   params: [azukiOwner],
-    // });
-
-    // await network.provider.send("hardhat_setBalance", [
-    //   azukiOwner,
-    //   numToHex(45281102540907114720),
-    // ]);
-
-    // const azukiOwnerSigner = await ethers.provider.getSigner(azukiOwner);
-
-    // await royaltyFeeSetter.connect(azukiOwnerSigner).updateRoyaltyInfoForCollectionIfOwner(azukiAddress, account1.address, account1.address, ethers.utils.parseUnits("2000", 0));
-
-    // const [receiver, royaltyAmt] = await royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(azukiAddress, 99, ethers.utils.parseEther("1"));
-
-    // expect(receiver).to.equal(account1.address);
-    // expect(ethers.utils.formatEther(royaltyAmt)).to.equal("0.2");
-    expect(true).to.equal(true);
+  it("Should pass: transfer manager for bored ape should be 721", async () => {
+    const boredApeTransferManager = await transferSelectorNFT.checkTransferManagerForToken(boredApeAddress);
+    expect(boredApeTransferManager).to.equal(transferManagerERC721.address);
   });
 
-
+  it("Should pass: transfer manager for AlpacaToken should be 1155", async () => {
+    const alpacaTokenTransferManager = await transferSelectorNFT.checkTransferManagerForToken("0xc7e5e9434f4a71e6db978bd65b4d61d3593e5f27");
+    expect(alpacaTokenTransferManager).to.equal(transferManagerERC1155.address);
+  });
 });
