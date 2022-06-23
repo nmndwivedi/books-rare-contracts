@@ -115,6 +115,7 @@ contract BooksRareExchange is IBooksRareExchange, ReentrancyGuard, Ownable {
         address _currencyManager,
         address _executionManager,
         address _royaltyFeeManager,
+        address _transferSelectorNFT,
         address _WETH,
         address _protocolFeeRecipient
     ) {
@@ -132,6 +133,7 @@ contract BooksRareExchange is IBooksRareExchange, ReentrancyGuard, Ownable {
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
+        transferSelectorNFT = ITransferSelectorNFT(_transferSelectorNFT);
         WETH = _WETH;
         protocolFeeRecipient = _protocolFeeRecipient;
     }
@@ -335,53 +337,12 @@ contract BooksRareExchange is IBooksRareExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Update currency manager
-     * @param _currencyManager new currency manager address
-     */
-    function updateCurrencyManager(address _currencyManager) external onlyOwner {
-        if(_currencyManager == address(0)) revert Owner_CannotBeNullAddress(); // "Owner: Cannot be null address");
-        currencyManager = ICurrencyManager(_currencyManager);
-        emit NewCurrencyManager(_currencyManager);
-    }
-
-    /**
-     * @notice Update execution manager
-     * @param _executionManager new execution manager address
-     */
-    function updateExecutionManager(address _executionManager) external onlyOwner {
-        if(_executionManager == address(0)) revert Owner_CannotBeNullAddress(); // "Owner: Cannot be null address");
-        executionManager = IExecutionManager(_executionManager);
-        emit NewExecutionManager(_executionManager);
-    }
-
-    /**
      * @notice Update protocol fee and recipient
      * @param _protocolFeeRecipient new recipient for protocol fees
      */
     function updateProtocolFeeRecipient(address _protocolFeeRecipient) external onlyOwner {
         protocolFeeRecipient = _protocolFeeRecipient;
         emit NewProtocolFeeRecipient(_protocolFeeRecipient);
-    }
-
-    /**
-     * @notice Update royalty fee manager
-     * @param _royaltyFeeManager new fee manager address
-     */
-    function updateRoyaltyFeeManager(address _royaltyFeeManager) external onlyOwner {
-        if(_royaltyFeeManager == address(0)) revert Owner_CannotBeNullAddress(); // "Owner: Cannot be null address");
-        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
-        emit NewRoyaltyFeeManager(_royaltyFeeManager);
-    }
-
-    /**
-     * @notice Update transfer selector NFT
-     * @param _transferSelectorNFT new transfer selector address
-     */
-    function updateTransferSelectorNFT(address _transferSelectorNFT) external onlyOwner {
-        if(_transferSelectorNFT == address(0)) revert Owner_CannotBeNullAddress(); // "Owner: Cannot be null address");
-        transferSelectorNFT = ITransferSelectorNFT(_transferSelectorNFT);
-
-        emit NewTransferSelectorNFT(_transferSelectorNFT);
     }
 
     /**
