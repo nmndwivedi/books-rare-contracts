@@ -22,7 +22,7 @@ describe("Strategy Standard Sale For Fixed Price", function () {
 
       let startTime = timestampBefore;
       let seconds = 1000;
-      endTime = startTime + seconds;
+      let endTime = startTime + seconds;
 
       let makerOrder = {
         isOrderAsk: !!isMakerAskTakerBid,

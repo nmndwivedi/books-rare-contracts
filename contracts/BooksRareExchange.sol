@@ -63,11 +63,7 @@ contract BooksRareExchange is IBooksRareExchange, ReentrancyGuard, Ownable {
 
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
-    event NewCurrencyManager(address indexed currencyManager);
-    event NewExecutionManager(address indexed executionManager);
     event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
-    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
-    event NewTransferSelectorNFT(address indexed transferSelectorNFT);
 
     event RoyaltyPayment(
         address indexed collection,
