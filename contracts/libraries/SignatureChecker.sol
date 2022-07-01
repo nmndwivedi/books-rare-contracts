@@ -4,6 +4,12 @@ pragma solidity ^0.8.6;
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
+import "hardhat/console.sol";
+
+error Signature_Invalid_s();
+error Signature_Invalid_v();
+error Signature_Invalid_signer();
+
 /**
  * @title SignatureChecker
  * @notice This library allows verification of signatures for both EOAs and contracts.
@@ -24,16 +30,13 @@ library SignatureChecker {
     ) internal pure returns (address) {
         // https://ethereum.stackexchange.com/questions/83174/is-it-best-practice-to-check-signature-malleability-in-ecrecover
         // https://crypto.iacr.org/2019/affevents/wac/medias/Heninger-BiasedNonceSense.pdf
-        require(
-            uint256(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
-            "Signature: Invalid s parameter"
-        );
+        if(uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) revert Signature_Invalid_s(); // "Signature: Invalid s parameter"
 
-        require(v == 27 || v == 28, "Signature: Invalid v parameter");
+        if(!(v == 27 || v == 28)) revert Signature_Invalid_v(); // "Signature: Invalid v parameter");
 
         // If the signature is valid (and not malleable), return the signer address
         address signer = ecrecover(hash, v, r, s);
-        require(signer != address(0), "Signature: Invalid signer");
+        if(signer == address(0)) revert Signature_Invalid_signer(); // "Signature: Invalid signer");
 
         return signer;
     }
@@ -63,6 +66,8 @@ library SignatureChecker {
             // 0x1626ba7e is the interfaceId for signature contracts (see IERC1271)
             return IERC1271(signer).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e;
         } else {
+        console.log("digest");
+        console.logAddress(ecrecover(digest, v, r, s));
             return recover(digest, v, r, s) == signer;
         }
     }
