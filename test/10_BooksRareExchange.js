@@ -140,12 +140,9 @@ describe("Royalty Fee Manager", function () {
     let seconds = 1000;
     let endTime = startTime + seconds;
 
-
-    const priv = new ethers.Wallet("b0c2334182528060f650b13e44de881cd3a7bd38d2efd18c657227c8bc59ea17");
-
     let makerOrder = {
       isOrderAsk: isMakerAskTakerBid,
-      signer: priv.address,
+      signer: owner.address,
       collection: azukiAddress,
       price: ethers.utils.parseEther("2"),
       tokenId: 10,
@@ -193,7 +190,7 @@ describe("Royalty Fee Manager", function () {
         ]
     }
 
-    const signature = await priv._signTypedData(domain, types, makerOrder);
+    const signature = await owner._signTypedData(domain, types, makerOrder);
 
     const { v, r, s } = ethers.utils.splitSignature(signature);
 
