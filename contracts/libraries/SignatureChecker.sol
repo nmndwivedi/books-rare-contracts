@@ -4,8 +4,6 @@ pragma solidity ^0.8.6;
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
-import "hardhat/console.sol";
-
 error Signature_Invalid_s();
 error Signature_Invalid_v();
 error Signature_Invalid_signer();
@@ -66,8 +64,6 @@ library SignatureChecker {
             // 0x1626ba7e is the interfaceId for signature contracts (see IERC1271)
             return IERC1271(signer).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e;
         } else {
-        console.log("digest");
-        console.logAddress(ecrecover(digest, v, r, s));
             return recover(digest, v, r, s) == signer;
         }
     }

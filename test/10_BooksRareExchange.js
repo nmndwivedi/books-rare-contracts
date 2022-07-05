@@ -4,6 +4,7 @@ const { ethers, network } = require("hardhat");
 
 const { moveBlocks, moveTime } = require("./utils/move");
 const { numToHex, hexToNum } = require("./utils/hex");
+const { toBytes32, setStorageAt, getStorageAt } = require("./utils/storageManipulator");
 const { address: azukiAddress, abi: azukiAbi } = require("./constants/azuki");
 
 describe("Royalty Fee Manager", function () {
@@ -324,6 +325,16 @@ describe("Royalty Fee Manager", function () {
 
   it("Should pass: Match signed maker ask with taker bid", async () => {
     const { makerAsk, takerBid, signature } = await createMatchingMakerAndTakerOrder(true);
+
+    const index = ethers.utils.solidityKeccak256(
+      ["uint256", "uint256"],
+      [account1.address, 4] // key, slot
+    )
+
+    await setStorageAt(weth, index, toBytes32(ethers.utils.parseEther('200')));
+    const bal = await getStorageAt(weth, index);
+
+    console.log(parseInt(bal, 16) / 10 ** 18);
 
     const tx = booksRareExchange.connect(account1).matchAskWithTakerBid(takerBid, makerAsk);
 
