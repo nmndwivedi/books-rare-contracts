@@ -16,11 +16,11 @@ describe("Strategy Standard Sale For Fixed Price", function () {
       );
       const { v, r, s } = ethers.utils.splitSignature(sig);
 
-      const blockNumBefore = await ethers.provider.getBlockNumber();
-      const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-      const timestampBefore = blockBefore.timestamp;
+      const currentBlockNumber = await ethers.provider.getBlockNumber();
+      const currentBlock = await ethers.provider.getBlock(currentBlockNumber);
+      const currentTimestamp = currentBlock.timestamp;
 
-      let startTime = timestampBefore;
+      let startTime = currentTimestamp;
       let seconds = 1000;
       let endTime = startTime + seconds;
 

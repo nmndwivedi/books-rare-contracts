@@ -6,7 +6,7 @@ const { moveBlocks, moveTime } = require("./utils/move");
 const { numToHex, hexToNum } = require("./utils/hex");
 const { address: boredApeAddress, abi: boredApeAbi } = require("./constants/boredApe");
 
-describe("Royalty Fee Manager", function () {
+describe("Transfer Selector NFT", function () {
   // Deploy contract
   let transferManagerERC721, transferManagerERC1155, transferManagerNonCompliantERC721, transferSelectorNFT, owner, account1;
 
