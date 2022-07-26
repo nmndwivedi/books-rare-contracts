@@ -3,6 +3,7 @@ pragma solidity ^0.8.6;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IBooksRareToken} from "../interfaces/IBooksRareToken.sol";
 
 error BOOKS_PremintAmountIsGreaterThanCap();
 
@@ -10,7 +11,7 @@ error BOOKS_PremintAmountIsGreaterThanCap();
  * @title BooksRareToken (BOOKS)
  * @notice
  */
-contract BooksRareToken is ERC20, Ownable {
+contract BooksRareToken is ERC20, Ownable, IBooksRareToken {
     uint256 private immutable _SUPPLY_CAP;
 
     /**
@@ -36,7 +37,7 @@ contract BooksRareToken is ERC20, Ownable {
      * @param amount amount to mint
      * @return status true if mint is successful, false if not
      */
-    function mint(address account, uint256 amount) external onlyOwner returns (bool status) {
+    function mint(address account, uint256 amount) external override onlyOwner returns (bool status) {
         if (totalSupply() + amount <= _SUPPLY_CAP) {
             _mint(account, amount);
             return true;
@@ -47,7 +48,7 @@ contract BooksRareToken is ERC20, Ownable {
     /**
      * @notice View supply cap
      */
-    function SUPPLY_CAP() external view returns (uint256) {
+    function SUPPLY_CAP() external override view returns (uint256) {
         return _SUPPLY_CAP;
     }
 }
