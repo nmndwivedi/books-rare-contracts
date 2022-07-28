@@ -15,7 +15,8 @@ error Owner_TooEarlyToWithdraw();
 
 /**
  * @title TradingRewardsDistributor
- * @notice It distributes BOOKS tokens with rolling Merkle airdrops.
+ * @notice It distributes BOOKS tokens with rolling Merkle airdrops
+    for users who based on trade volumes for select collections(with > 1000 eth in trading volume), computed off chain
  */
 contract TradingRewardsDistributor is Pausable, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;

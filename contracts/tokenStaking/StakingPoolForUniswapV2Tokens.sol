@@ -18,30 +18,30 @@ error Owner_NewEndBlockMustBeAfterStartBlock();
 
 /**
  * @title StakingPoolForUniswapV2Tokens
- * @notice It is a staking pool for Uniswap V2 LP tokens (stake Uniswap V2 LP tokens -> get LOOKS).
+ * @notice It is a staking pool for Uniswap V2 LP tokens (stake Uniswap V2 LP tokens -> get BOOKS).
  */
 contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
-        uint256 amount; // Amount of staked tokens provided by user
+        uint256 stakedAmount; // Amount of staked tokens provided by user
         uint256 rewardDebt; // Reward debt
     }
 
     // Precision factor for reward calculation
     uint256 public constant PRECISION_FACTOR = 10**12;
 
-    // LOOKS token (token distributed)
+    // BOOKS token (token distributed)
     IERC20 public immutable BooksRareToken;
 
-    // The staked token (i.e., Uniswap V2 WETH/LOOKS LP token)
+    // The staked token (i.e., Uniswap V2 WETH/BOOKS LP token)
     IERC20 public immutable stakedToken;
 
     // Block number when rewards start
     uint256 public immutable START_BLOCK;
 
     // Accumulated tokens per share
-    uint256 public accTokenPerShare;
+    uint256 public accumulatedTokensPerStakedToken;
 
     // Block number when rewards end
     uint256 public endBlock;
@@ -66,7 +66,7 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
      * @notice Constructor
      * @param _stakedToken staked token address
      * @param _BooksRareToken reward token address
-     * @param _rewardPerBlock reward per block (in LOOKS)
+     * @param _rewardPerBlock reward per block (in BOOKS)
      * @param _startBlock start block
      * @param _endBlock end block
      */
@@ -98,9 +98,9 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
 
         uint256 pendingRewards;
 
-        if (userInfo[msg.sender].amount > 0) {
+        if (userInfo[msg.sender].stakedAmount > 0) {
             pendingRewards =
-                ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
+                ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) -
                 userInfo[msg.sender].rewardDebt;
 
             if (pendingRewards > 0) {
@@ -110,8 +110,8 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
 
         stakedToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        userInfo[msg.sender].amount += amount;
-        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR;
+        userInfo[msg.sender].stakedAmount += amount;
+        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR;
 
         emit Deposit(msg.sender, amount, pendingRewards);
     }
@@ -122,12 +122,12 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
     function harvest() external nonReentrant {
         _updatePool();
 
-        uint256 pendingRewards = ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
+        uint256 pendingRewards = ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) -
             userInfo[msg.sender].rewardDebt;
 
         if(pendingRewards <= 0) revert Harvest_PendingRewardsMustBeGreaterThan0();
 
-        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR;
+        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR;
         BooksRareToken.safeTransfer(msg.sender, pendingRewards);
 
         emit Harvest(msg.sender, pendingRewards);
@@ -138,12 +138,12 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
      * @dev Only for emergency. It does not update the pool.
      */
     function emergencyWithdraw() external nonReentrant whenPaused {
-        uint256 userBalance = userInfo[msg.sender].amount;
+        uint256 userBalance = userInfo[msg.sender].stakedAmount;
 
         if(userBalance == 0) revert Withdraw_AmountMustBeGreaterThan0();
 
         // Reset internal value for user
-        userInfo[msg.sender].amount = 0;
+        userInfo[msg.sender].stakedAmount = 0;
         userInfo[msg.sender].rewardDebt = 0;
 
         stakedToken.safeTransfer(msg.sender, userBalance);
@@ -156,15 +156,15 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
      * @param amount amount to withdraw (in stakedToken)
      */
     function withdraw(uint256 amount) external nonReentrant {
-        if(!((userInfo[msg.sender].amount >= amount) && (amount > 0))) revert Withdraw_AmountMustBeGreaterThan0OrLowerThanUserBalance();
+        if(!((userInfo[msg.sender].stakedAmount >= amount) && (amount > 0))) revert Withdraw_AmountMustBeGreaterThan0OrLowerThanUserBalance();
 
         _updatePool();
 
-        uint256 pendingRewards = ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
+        uint256 pendingRewards = ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) -
             userInfo[msg.sender].rewardDebt;
 
-        userInfo[msg.sender].amount -= amount;
-        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR;
+        userInfo[msg.sender].stakedAmount -= amount;
+        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR;
 
         stakedToken.safeTransfer(msg.sender, amount);
 
@@ -230,11 +230,11 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
         if ((block.number > lastRewardBlock) && (stakedTokenSupply != 0)) {
             uint256 multiplier = _getMultiplier(lastRewardBlock, block.number);
             uint256 tokenReward = multiplier * rewardPerBlock;
-            uint256 adjustedTokenPerShare = accTokenPerShare + (tokenReward * PRECISION_FACTOR) / stakedTokenSupply;
+            uint256 adjustedTokenPerStakedToken = accumulatedTokensPerStakedToken + (tokenReward * PRECISION_FACTOR) / stakedTokenSupply;
 
-            return (userInfo[user].amount * adjustedTokenPerShare) / PRECISION_FACTOR - userInfo[user].rewardDebt;
+            return (userInfo[user].stakedAmount * adjustedTokenPerStakedToken) / PRECISION_FACTOR - userInfo[user].rewardDebt;
         } else {
-            return (userInfo[user].amount * accTokenPerShare) / PRECISION_FACTOR - userInfo[user].rewardDebt;
+            return (userInfo[user].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR - userInfo[user].rewardDebt;
         }
     }
 
@@ -258,7 +258,7 @@ contract StakingPoolForUniswapV2Tokens is Ownable, Pausable, ReentrancyGuard {
 
         // Update only if token reward for staking is not null
         if (tokenReward > 0) {
-            accTokenPerShare = accTokenPerShare + ((tokenReward * PRECISION_FACTOR) / stakedTokenSupply);
+            accumulatedTokensPerStakedToken = accumulatedTokensPerStakedToken + ((tokenReward * PRECISION_FACTOR) / stakedTokenSupply);
         }
 
         // Update last reward block only if it wasn't updated after or at the end block

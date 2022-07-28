@@ -29,7 +29,7 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
     // Precision factor for calculating rewards and exchange rate
     uint256 public constant PRECISION_FACTOR = 10**18;
 
-    IERC20 public immutable BooksRareToken;
+    IERC20 public immutable booksRareToken;
 
     IERC20 public immutable rewardToken;
 
@@ -62,17 +62,17 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
 
     /**
      * @notice Constructor
-     * @param _BooksRareToken address of the token staked (BOOKS)
+     * @param _booksRareToken address of the token staked (BOOKS)
      * @param _rewardToken address of the reward token
      * @param _tokenDistributor address of the token distributor contract
      */
     constructor(
-        address _BooksRareToken,
+        address _booksRareToken,
         address _rewardToken,
         address _tokenDistributor
     ) {
         rewardToken = IERC20(_rewardToken);
-        BooksRareToken = IERC20(_BooksRareToken);
+        booksRareToken = IERC20(_booksRareToken);
         tokenDistributor = TokenDistributor(_tokenDistributor);
     }
 
@@ -95,7 +95,7 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
         (uint256 totalAmountStaked, ) = tokenDistributor.userInfo(address(this));
 
         // Transfer BOOKS tokens to this address
-        BooksRareToken.safeTransferFrom(msg.sender, address(this), amount);
+        booksRareToken.safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 currentShares;
 
@@ -256,8 +256,8 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
      * @param _to token to transfer
      */
     function _checkAndAdjustBOOKSTokenAllowanceIfRequired(uint256 _amount, address _to) internal {
-        if (BooksRareToken.allowance(address(this), _to) < _amount) {
-            BooksRareToken.approve(_to, type(uint256).max);
+        if (booksRareToken.allowance(address(this), _to) < _amount) {
+            booksRareToken.approve(_to, type(uint256).max);
         }
     }
 
@@ -331,7 +331,7 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
         }
 
         // Transfer BOOKS tokens to sender
-        BooksRareToken.safeTransfer(msg.sender, currentAmount);
+        booksRareToken.safeTransfer(msg.sender, currentAmount);
 
         emit Withdraw(msg.sender, currentAmount, pendingRewards);
     }
