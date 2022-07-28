@@ -28,7 +28,7 @@ contract TokenDistributor is ReentrancyGuard {
     }
 
     struct UserInfo {
-        uint256 amount; // Amount of staked tokens provided by user
+        uint256 stakedAmount; // Amount of staked tokens provided by user
         uint256 rewardDebt; // Reward debt
     }
 
@@ -46,7 +46,7 @@ contract TokenDistributor is ReentrancyGuard {
     uint256 public immutable START_BLOCK;
 
     // Accumulated tokens per share
-    uint256 public accTokenPerShare;
+    uint256 public accumulatedTokensPerStakedToken;
 
     // Current phase for rewards
     uint256 public currentPhase;
@@ -82,8 +82,8 @@ contract TokenDistributor is ReentrancyGuard {
      * @param _startBlock start block for reward program
      * @param _rewardsPerBlockForStaking array of rewards per block for staking
      * @param _rewardsPerBlockForOthers array of rewards per block for other purposes (team + treasury + trading rewards)
-     * @param _periodLengthesInBlocks array of period lengthes
-     * @param _numberPeriods number of periods with different rewards/lengthes (e.g., if 3 changes --> 4 periods)
+     * @param _periodLengthsInBlocks array of period lengths
+     * @param _numberPeriods number of periods with different rewards/lengths (e.g., if 3 changes --> 4 periods)
      */
     constructor(
         address _BooksRareToken,
@@ -91,10 +91,10 @@ contract TokenDistributor is ReentrancyGuard {
         uint256 _startBlock,
         uint256[] memory _rewardsPerBlockForStaking,
         uint256[] memory _rewardsPerBlockForOthers,
-        uint256[] memory _periodLengthesInBlocks,
+        uint256[] memory _periodLengthsInBlocks,
         uint256 _numberPeriods
     ) {
-        if(!((_periodLengthesInBlocks.length == _numberPeriods) && (_rewardsPerBlockForStaking.length == _numberPeriods) &&
+        if(!((_periodLengthsInBlocks.length == _numberPeriods) && (_rewardsPerBlockForStaking.length == _numberPeriods) &&
                 (_rewardsPerBlockForStaking.length == _numberPeriods))) revert Distributor_LengthsMustMatchNumberPeriods();
 
         // 1. Operational checks for supply
@@ -105,13 +105,13 @@ contract TokenDistributor is ReentrancyGuard {
 
         for (uint256 i = 0; i < _numberPeriods; i++) {
             amountTokensToBeMinted +=
-                (_rewardsPerBlockForStaking[i] * _periodLengthesInBlocks[i]) +
-                (_rewardsPerBlockForOthers[i] * _periodLengthesInBlocks[i]);
+                (_rewardsPerBlockForStaking[i] * _periodLengthsInBlocks[i]) +
+                (_rewardsPerBlockForOthers[i] * _periodLengthsInBlocks[i]);
 
             stakingPeriod[i] = StakingPeriod({
                 rewardPerBlockForStaking: _rewardsPerBlockForStaking[i],
                 rewardPerBlockForOthers: _rewardsPerBlockForOthers[i],
-                periodLengthInBlock: _periodLengthesInBlocks[i]
+                periodLengthInBlock: _periodLengthsInBlocks[i]
             });
         }
 
@@ -124,7 +124,7 @@ contract TokenDistributor is ReentrancyGuard {
         rewardPerBlockForOthers = _rewardsPerBlockForOthers[0];
 
         START_BLOCK = _startBlock;
-        endBlock = _startBlock + _periodLengthesInBlocks[0];
+        endBlock = _startBlock + _periodLengthsInBlocks[0];
 
         NUMBER_PERIODS = _numberPeriods;
 
@@ -148,15 +148,13 @@ contract TokenDistributor is ReentrancyGuard {
         uint256 pendingRewards;
 
         // If not new deposit, calculate pending rewards (for auto-compounding)
-        if (userInfo[msg.sender].amount > 0) {
-            pendingRewards =
-                ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
-                userInfo[msg.sender].rewardDebt;
+        if (userInfo[msg.sender].stakedAmount > 0) {
+            pendingRewards =  ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) - userInfo[msg.sender].rewardDebt;
         }
 
         // Adjust user information
-        userInfo[msg.sender].amount += (amount + pendingRewards);
-        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR;
+        userInfo[msg.sender].stakedAmount += (amount + pendingRewards);
+        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR;
 
         // Increase totalAmountStaked
         totalAmountStaked += (amount + pendingRewards);
@@ -172,7 +170,7 @@ contract TokenDistributor is ReentrancyGuard {
         _updatePool();
 
         // Calculate pending rewards
-        uint256 pendingRewards = ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
+        uint256 pendingRewards = ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) -
             userInfo[msg.sender].rewardDebt;
 
         // Return if no pending rewards
@@ -182,13 +180,13 @@ contract TokenDistributor is ReentrancyGuard {
         }
 
         // Adjust user amount for pending rewards
-        userInfo[msg.sender].amount += pendingRewards;
+        userInfo[msg.sender].stakedAmount += pendingRewards;
 
         // Adjust totalAmountStaked
         totalAmountStaked += pendingRewards;
 
         // Recalculate reward debt based on new user amount
-        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR;
+        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR;
 
         emit Compound(msg.sender, pendingRewards);
     }
@@ -202,51 +200,51 @@ contract TokenDistributor is ReentrancyGuard {
 
     /**
      * @notice Withdraw staked tokens and compound pending rewards
-     * @param amount amount to withdraw
+     * @param withdrawAmount amount to withdraw
      */
-    function withdraw(uint256 amount) external nonReentrant {
-        if(!((userInfo[msg.sender].amount >= amount) && (amount > 0))) revert Withdraw_AmountMustBeGreaterThan0OrLowerThanUserBalance();
+    function withdraw(uint256 withdrawAmount) external nonReentrant {
+        if(!((userInfo[msg.sender].stakedAmount >= withdrawAmount) && (withdrawAmount > 0))) revert Withdraw_AmountMustBeGreaterThan0OrLowerThanUserBalance();
 
         // Update pool
         _updatePool();
 
         // Calculate pending rewards
-        uint256 pendingRewards = ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
+        uint256 pendingRewards = ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) -
             userInfo[msg.sender].rewardDebt;
 
         // Adjust user information
-        userInfo[msg.sender].amount = userInfo[msg.sender].amount + pendingRewards - amount;
-        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR;
+        userInfo[msg.sender].stakedAmount = userInfo[msg.sender].stakedAmount + pendingRewards - withdrawAmount;
+        userInfo[msg.sender].rewardDebt = (userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR;
 
         // Adjust total amount staked
-        totalAmountStaked = totalAmountStaked + pendingRewards - amount;
+        totalAmountStaked = totalAmountStaked + pendingRewards - withdrawAmount;
 
         // Transfer BOOKS tokens to the sender
-        BooksRareToken.safeTransfer(msg.sender, amount);
+        BooksRareToken.safeTransfer(msg.sender, withdrawAmount);
 
-        emit Withdraw(msg.sender, amount, pendingRewards);
+        emit Withdraw(msg.sender, withdrawAmount, pendingRewards);
     }
 
     /**
      * @notice Withdraw all staked tokens and collect tokens
      */
     function withdrawAll() external nonReentrant {
-        if(userInfo[msg.sender].amount <= 0) revert Withdraw_AmountMustBeGreaterThan0();
+        if(userInfo[msg.sender].stakedAmount <= 0) revert Withdraw_AmountMustBeGreaterThan0();
 
         // Update pool
         _updatePool();
 
         // Calculate pending rewards and amount to transfer (to the sender)
-        uint256 pendingRewards = ((userInfo[msg.sender].amount * accTokenPerShare) / PRECISION_FACTOR) -
+        uint256 pendingRewards = ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) -
             userInfo[msg.sender].rewardDebt;
 
-        uint256 amountToTransfer = userInfo[msg.sender].amount + pendingRewards;
+        uint256 amountToTransfer = userInfo[msg.sender].stakedAmount + pendingRewards;
 
         // Adjust total amount staked
-        totalAmountStaked = totalAmountStaked - userInfo[msg.sender].amount;
+        totalAmountStaked = totalAmountStaked - userInfo[msg.sender].stakedAmount;
 
         // Adjust user information
-        userInfo[msg.sender].amount = 0;
+        userInfo[msg.sender].stakedAmount = 0;
         userInfo[msg.sender].rewardDebt = 0;
 
         // Transfer BOOKS tokens to the sender
@@ -292,13 +290,11 @@ contract TokenDistributor is ReentrancyGuard {
                 tokenRewardForStaking += (newMultiplier * adjustedRewardPerBlockForStaking);
             }
 
-            uint256 adjustedTokenPerShare = accTokenPerShare +
-                (tokenRewardForStaking * PRECISION_FACTOR) /
-                totalAmountStaked;
+            uint256 adjustedTokensPerStakedToken = accumulatedTokensPerStakedToken + (tokenRewardForStaking * PRECISION_FACTOR) / totalAmountStaked;
 
-            return (userInfo[user].amount * adjustedTokenPerShare) / PRECISION_FACTOR - userInfo[user].rewardDebt;
+            return (userInfo[user].stakedAmount * adjustedTokensPerStakedToken) / PRECISION_FACTOR - userInfo[user].rewardDebt;
         } else {
-            return (userInfo[user].amount * accTokenPerShare) / PRECISION_FACTOR - userInfo[user].rewardDebt;
+            return (userInfo[user].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR - userInfo[user].rewardDebt;
         }
     }
 
@@ -345,7 +341,7 @@ contract TokenDistributor is ReentrancyGuard {
             // It allows protection against potential issues to prevent funds from being locked
             bool mintStatus = BooksRareToken.mint(address(this), tokenRewardForStaking);
             if (mintStatus) {
-                accTokenPerShare = accTokenPerShare + ((tokenRewardForStaking * PRECISION_FACTOR) / totalAmountStaked);
+                accumulatedTokensPerStakedToken = accumulatedTokensPerStakedToken + ((tokenRewardForStaking * PRECISION_FACTOR) / totalAmountStaked);
             }
 
             BooksRareToken.mint(tokenSplitter, tokenRewardForOthers);
