@@ -149,7 +149,7 @@ contract TokenDistributor is ReentrancyGuard {
 
         // If not new deposit, calculate pending rewards (for auto-compounding)
         if (userInfo[msg.sender].stakedAmount > 0) {
-            pendingRewards =  ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) - userInfo[msg.sender].rewardDebt;
+            pendingRewards = ((userInfo[msg.sender].stakedAmount * accumulatedTokensPerStakedToken) / PRECISION_FACTOR) - userInfo[msg.sender].rewardDebt;
         }
 
         // Adjust user information
