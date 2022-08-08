@@ -13,7 +13,7 @@ import {IRewardConvertor} from "../interfaces/IRewardConvertor.sol";
 
 /**
  * @title FeeSharingSetter
- * @notice It receives LooksRare protocol fees and owns the FeeSharingSystem contract.
+ * @notice It receives BooksRare protocol fees and owns the FeeSharingSystem contract.
  * It can plug to AMMs for converting all received currencies to WETH.
  */
 contract FeeSharingSetter is ReentrancyGuard, AccessControl {
@@ -29,7 +29,7 @@ contract FeeSharingSetter is ReentrancyGuard, AccessControl {
     // Max duration for each fee-sharing period (in blocks)
     uint256 public immutable MAX_REWARD_DURATION_IN_BLOCKS;
 
-    IERC20 public immutable looksRareToken;
+    IERC20 public immutable booksRareToken;
 
     IERC20 public immutable rewardToken;
 
@@ -84,7 +84,7 @@ contract FeeSharingSetter is ReentrancyGuard, AccessControl {
         feeSharingSystem = FeeSharingSystem(_feeSharingSystem);
 
         rewardToken = feeSharingSystem.rewardToken();
-        looksRareToken = feeSharingSystem.looksRareToken();
+        booksRareToken = feeSharingSystem.booksRareToken();
         tokenDistributor = feeSharingSystem.tokenDistributor();
 
         rewardDurationInBlocks = _rewardDurationInBlocks;
@@ -96,7 +96,7 @@ contract FeeSharingSetter is ReentrancyGuard, AccessControl {
     /**
      * @notice Update the reward per block (in rewardToken)
      * @dev It automatically retrieves the number of pending WETH and adjusts
-     * based on the balance of LOOKS in fee-staking addresses that exist in the set.
+     * based on the balance of BOOKS in fee-staking addresses that exist in the set.
      */
     function updateRewards() external onlyRole(OPERATOR_ROLE) {
         if (lastRewardDistributionBlock > 0) {
@@ -120,13 +120,13 @@ contract FeeSharingSetter is ReentrancyGuard, AccessControl {
 
         // If there are eligible addresses for fee-sharing only, calculate their shares
         if (numberAddressesForFeeStaking > 0) {
-            uint256[] memory looksBalances = new uint256[](numberAddressesForFeeStaking);
+            uint256[] memory booksBalances = new uint256[](numberAddressesForFeeStaking);
             (uint256 totalAmountStaked, ) = tokenDistributor.userInfo(address(feeSharingSystem));
 
             for (uint256 i = 0; i < numberAddressesForFeeStaking; i++) {
-                uint256 looksBalance = looksRareToken.balanceOf(_feeStakingAddresses.at(i));
-                totalAmountStaked += looksBalance;
-                looksBalances[i] = looksBalance;
+                uint256 booksBalance = booksRareToken.balanceOf(_feeStakingAddresses.at(i));
+                totalAmountStaked += booksBalance;
+                booksBalances[i] = booksBalance;
             }
 
             // Only apply the logic if the totalAmountStaked > 0 (to prevent division by 0)
@@ -134,7 +134,7 @@ contract FeeSharingSetter is ReentrancyGuard, AccessControl {
                 uint256 adjustedReward = reward;
 
                 for (uint256 i = 0; i < numberAddressesForFeeStaking; i++) {
-                    uint256 amountToTransfer = (looksBalances[i] * reward) / totalAmountStaked;
+                    uint256 amountToTransfer = (booksBalances[i] * reward) / totalAmountStaked;
                     if (amountToTransfer > 0) {
                         adjustedReward -= amountToTransfer;
                         rewardToken.safeTransfer(_feeStakingAddresses.at(i), amountToTransfer);

@@ -246,8 +246,7 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
      */
     function _calculatePendingRewards(address user) internal view returns (uint256) {
         return
-            ((userInfo[user].shares * (_rewardPerToken() - (userInfo[user].userRewardPerTokenPaid))) /
-                PRECISION_FACTOR) + userInfo[user].rewards;
+            ((userInfo[user].shares * (_rewardPerToken() - (userInfo[user].userRewardPerTokenPaid))) / PRECISION_FACTOR) + userInfo[user].rewards;
     }
 
     /**
@@ -277,9 +276,7 @@ contract FeeSharingSystem is ReentrancyGuard, Ownable {
         }
 
         return
-            rewardPerTokenStored +
-            ((_lastRewardBlock() - lastUpdateBlock) * (currentRewardPerBlock * PRECISION_FACTOR)) /
-            totalShares;
+            rewardPerTokenStored + ((_lastRewardBlock() - lastUpdateBlock) * (currentRewardPerBlock * PRECISION_FACTOR)) / totalShares;
     }
 
     /**
